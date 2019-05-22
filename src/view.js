@@ -1,15 +1,12 @@
 const MAX_DISPLAYED = 40;
-const BATCH_SIZE = 5;
 
-export default function View(model) {
-    this.model = model;
+export default function View() {
     this.displayed = 0;
     this.moreButtonDisplayed = true;
     this.failMessageDisplayed = false;
 }
 
-View.prototype.showSources = async function() {
-    let sources = await this.model.loadSources();
+View.prototype.showSources = function(sources) {
     const filter = document.getElementById("sourceFilter");
     const template = document.getElementById("sourceTemplate");
     sources.forEach(element => {
@@ -28,41 +25,41 @@ View.prototype.clear = function() {
     this.displayed = 0;
 }
 
-View.prototype.showRequest = async function(request) {
+View.prototype.showRequest = function(batch, hasMore) {
     this.clear();
-    await this.model.loadRequest(request);
-    if (this.model.loaded.length > 0) {
+    if (batch.length > 0) {
         if (this.failMessageDisplayed) {
-            hide(".failMessage");
+            hide("failMessage");
             this.failMessageDisplayed = false;
         }
-        this.appendArticles();
+        this.appendArticles(batch, hasMore);
     } else if (!this.failMessageDisplayed) {
-        show(".failMessage");
+        show("failMessage");
         this.failMessageDisplayed = true;
-        this.appendArticles();
+        this.appendArticles(batch, hasMore);
     }
 }
 
-View.prototype.appendArticles = function() {
+View.prototype.appendArticles = function(batch, hasMore) {
     const wrapper = document.getElementById("contentWrapper");
     const template = document.getElementById("contentElementTemplate");
 
     let fragment = document.createDocumentFragment();
-    let i = 0;
-    while (i < BATCH_SIZE && this.displayed < MAX_DISPLAYED && this.displayed < this.model.loaded.length) {
-        fragment.appendChild(createArticle(template.content.cloneNode(true), this.model.loaded[this.displayed++]));
-        i++;
-    }
+    batch.forEach(element => {
+        if (this.displayed < MAX_DISPLAYED) {
+            fragment.appendChild(createArticle(template.content.cloneNode(true), element));
+            this.displayed++;
+        }
+    });
     wrapper.appendChild(fragment);
-    if (this.displayed < MAX_DISPLAYED && this.displayed < this.model.loaded.length) {
+    if (this.displayed < MAX_DISPLAYED && hasMore) {
         if (!this.moreButtonDisplayed) {
-            show(".moreButton");
+            show("moreButton");
             this.moreButtonDisplayed = true;
         }
     } else {
         if (this.moreButtonDisplayed) {
-            hide(".moreButton");
+            hide("moreButton");
             this.moreButtonDisplayed = false;
         }
     }
@@ -72,17 +69,25 @@ function createArticle(node, article) {
     node.querySelector(".contentElementImg").style.backgroundImage = `url("${article.urlToImage}")`;
     node.querySelector(".articleLink").setAttribute("href", article.url);
     node.querySelector(".articleTitle").textContent = article.title;
-    node.querySelector(".articleSource").textContent = article.source.name + ",";
-    let date = new Date(article.publishedAt);
-    node.querySelector(".articleDate").textContent = date.toLocaleString("en-US", {day: "2-digit", month: "long", year: "numeric"});
+    let info = article.source.name;
+    if (article.publishedAt) {
+        let date = new Date(article.publishedAt);
+        info += ', ' + date.toLocaleString("en-US", {
+            hour12: false, day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+        });
+    }
+    if (article.author) {
+        info += ', Author: ' + article.author;
+    }
+    node.querySelector(".articleInfo").textContent = info;
     node.querySelector(".articleBody").textContent = article.description;
     return node;
 }
 
-function hide(selector) {
-    document.querySelector(selector).style.display = 'none';
+function hide(id) {
+    document.getElementById(id).style.display = 'none';
 }
 
-function show(selector) {
-    document.querySelector(selector).style.display = 'unset';
+function show(id) {
+    document.getElementById(id).style.display = 'unset';
 }

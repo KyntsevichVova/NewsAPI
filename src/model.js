@@ -1,30 +1,34 @@
 const key = "158b90ae4f0d4b918241c1c3e69335ed";
+const BATCH_SIZE = 5;
 
 export default function Model() {
     this.loaded = [];
-    this.source = undefined;
+    this.sources = new Set();
+    this.pointer = 0;
 }
 
-Model.prototype.setSource = function(source) {
-    if (this.source == source) {
-        this.source = undefined;
+Model.prototype.toggleSource = function(source) {
+    if (this.sources.has(source)) {
+        this.sources.delete(source);
+        return false;
     } else {
-        this.source = source;
+        this.sources.add(source);
+        return true;
     }
-    return this.source;
 }
 
 Model.prototype.loadSources = async function() {
     const url = `https://newsapi.org/v2/sources?apiKey=${key}`;
     const req = new Request(url);
-    return (await (await fetch(req)).json()).sources;
+    return (await (await fetch(req)).json());
 }
 
 Model.prototype.loadRequest = async function(request = {}) {
-    const endpoint = request.endpoint || "top-headlines";
-    let url = `https://newsapi.org/v2/${endpoint}?`;
+    this.pointer = 0;
+    const endpoint = request.endpoint || (this.sources.size ? "everything" : "top-headlines");
     request.endpoint = undefined;
-    request.sources = this.source;
+    let url = `https://newsapi.org/v2/${endpoint}?`;
+    request.sources = [ ...this.sources.values() ].join(',');
     if (!request.sources) {
         request.country = "us";
     } else {
@@ -44,4 +48,14 @@ Model.prototype.loadRequest = async function(request = {}) {
     } else {
         this.loaded = [];
     }
+}
+
+Model.prototype.nextBatch = function() {
+    let batch = this.loaded.slice(this.pointer, this.pointer + BATCH_SIZE);
+    this.pointer += batch.length;
+    return batch;
+}
+
+Model.prototype.hasMore = function() {
+    return this.pointer < this.loaded.length;
 }

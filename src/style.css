@@ -1,14 +1,21 @@
 body {
     margin: 0 auto;
     font-family: verdana, Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
     background-color: beige;
 }
 
-main {
+body.sticky {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+main.sticky {
     flex: 1 0 auto;
+}
+
+footer.sticky {
+    flex-shrink: 0;
 }
 
 .requestWrapper {
@@ -79,6 +86,7 @@ main {
 
 .sourceButton:hover {
     background-color: greenyellow;
+    cursor: pointer;
 }
 
 .activeFilter {
@@ -131,11 +139,7 @@ main {
     color: #333;
 }
 
-.articleSource {
-    color: #a2a2a2;
-}
-
-.articleDate {
+.articleInfo {
     color: #a2a2a2;
 }
 
@@ -179,6 +183,7 @@ main {
 
 .moreButton:hover {
     cursor: pointer;
+    color: #808080;
 }
 
 .moreButton:active{
@@ -193,5 +198,4 @@ footer {
     align-items: center;
     padding-top: 2vh;
     padding-bottom: 2vh;
-    flex-shrink: 0;
 }
